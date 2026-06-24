@@ -109,7 +109,8 @@
   <div class="executive-summary-box" id="executive-summary">{{ result.executive_summary }}</div>
   <div class="actions export-actions">
     <a class="button-link" href="{{ url_for('dashboard.export_brief', hearing_url=hearing_url, customer_type=customer_type) }}" target="_blank" rel="noreferrer">Eksporter kundebrief som PDF</a>
-    <a class="button-link secondary-link" href="{{ url_for('dashboard.export_actors_csv', hearing_url=hearing_url, customer_type=customer_type) }}">Eksporter aktørtabell som Excel/CSV</a>
+    <a class="button-link secondary-link" href="{{ url_for('dashboard.export_actors_xlsx', hearing_url=hearing_url, customer_type=customer_type) }}">Eksporter aktørtabell som Excel</a>
+    <a class="button-link secondary-link" href="{{ url_for('dashboard.export_actors_csv', hearing_url=hearing_url, customer_type=customer_type) }}">Eksporter aktørtabell som CSV</a>
     <button type="button" class="secondary" onclick="navigator.clipboard.writeText(document.getElementById('executive-summary').innerText)">Kopier executive summary</button>
     <a class="button-link secondary-link" href="{{ mailto_link }}">Lag e-postutkast til kunde</a>
     <a class="button-link secondary-link" href="{{ url_for('dashboard.export_meeting_note', hearing_url=hearing_url, customer_type=customer_type) }}">Lag notat til møte med kunde</a>

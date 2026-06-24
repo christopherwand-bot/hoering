@@ -4,6 +4,8 @@ import csv
 import io
 from urllib.parse import quote
 
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font
 from flask import Blueprint, Response, current_app, render_template, request
 
 from .analyzer import analyze_hearing
@@ -90,6 +92,75 @@ def export_actors_csv():
         buffer.getvalue(),
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment; filename=aktortabell.csv"},
+    )
+
+
+@dashboard_bp.route("/export/actors.xlsx")
+def export_actors_xlsx():
+    hearing_url = request.args.get("hearing_url", DEFAULT_HEARING_URL)
+    customer_type = request.args.get("customer_type", DEFAULT_CUSTOMER_TYPE)
+    result = _get_result(hearing_url, customer_type, force_refresh=False)
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Aktørtabell"
+
+    headers = [
+        "Aktør",
+        "Aktørtype",
+        "Standpunkt",
+        "Viktigste argument",
+        "Hva de ber om konkret",
+        "Relevans for kunden",
+        "Mulig alliert/motstander/nøytral",
+        "Kort sitat",
+        "Lenke til originalt svar",
+    ]
+    sheet.append(headers)
+
+    for cell in sheet[1]:
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(vertical="top", wrap_text=True)
+
+    for actor in result.actor_assessments:
+        sheet.append([
+            actor.actor,
+            actor.normalized_actor_type,
+            actor.primary_position,
+            actor.main_argument,
+            actor.concrete_request,
+            actor.relevance_for_client,
+            actor.relationship_to_client,
+            actor.short_quote,
+            actor.source_url,
+        ])
+
+    widths = {
+        "A": 28,
+        "B": 18,
+        "C": 28,
+        "D": 42,
+        "E": 42,
+        "F": 18,
+        "G": 28,
+        "H": 42,
+        "I": 45,
+    }
+    for column, width in widths.items():
+        sheet.column_dimensions[column].width = width
+
+    for row in sheet.iter_rows(min_row=2):
+        for cell in row:
+            cell.alignment = Alignment(vertical="top", wrap_text=True)
+
+    output = io.BytesIO()
+    workbook.save(output)
+    output.seek(0)
+
+    return Response(
+        output.getvalue(),
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=aktortabell.xlsx"},
     )
 
 
