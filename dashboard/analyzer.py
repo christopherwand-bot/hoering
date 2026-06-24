@@ -9,7 +9,7 @@ from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from .models import AnalysisResult, GroupSummary, HearingMetadata, HearingResponse
+from .models import AnalysisResult, GroupSummary, HearingMetadata, HearingResponse, PoliticalDirection
 
 NORWEGIAN_STOPWORDS = {
     "at", "av", "blir", "ble", "da", "de", "den", "denne", "dette", "du", "eg", "ein",
@@ -29,6 +29,17 @@ STANCE_RULES = {
     "betinget": ["forutsetter", "forutsetning", "dersom", "samtidig", "men", "bør vurderes", "må"],
 }
 
+POLITICAL_SIGNAL_SETS = {
+    "lokalt selvstyre": ["kommune", "kommunal", "lokal", "lokalsamfunn", "selvstyre", "handlingsrom"],
+    "næringsvennlig linje": ["næring", "reiseliv", "verdiskaping", "konkurranse", "bedrift", "besøkende"],
+    "miljøstyring": ["miljø", "natur", "utslipp", "bærekraft", "forvaltning", "besøksforvaltning"],
+    "avgiftsmoderasjon": ["moderat", "lavere", "avgiftsnivå", "forutsigbar", "belastning", "kostnad"],
+    "fellesskapsfinansiering": ["fellesgode", "infrastruktur", "finansiering", "bidra", "avgift", "inntekter"],
+    "regelklarhet": ["forskrift", "rammer", "hjemmel", "presisering", "administrativ", "regelverk"],
+    "regional fordeling": ["fylkeskommune", "region", "distrikt", "kyst", "havner", "fordeling"],
+    "arbeidsplasser": ["arbeidsplasser", "sysselsetting", "arbeid", "ansatte", "sjømannsforbund", "maskinistforbund"],
+}
+
 
 def analyze_hearing(metadata: HearingMetadata, responses: list[HearingResponse], errors: list[str]) -> AnalysisResult:
     usable = [response for response in responses if response.text]
@@ -37,6 +48,7 @@ def analyze_hearing(metadata: HearingMetadata, responses: list[HearingResponse],
             metadata=metadata,
             responses=responses,
             groups=[],
+            political_directions=[],
             similarity_pairs=[],
             stance_counts={},
             source_breakdown=Counter(response.source_kind for response in responses),
@@ -66,6 +78,7 @@ def analyze_hearing(metadata: HearingMetadata, responses: list[HearingResponse],
 
     similarity = cosine_similarity(matrix)
     groups = _build_groups(usable, labels, features, matrix, centroids, similarity)
+    political_directions = _build_political_directions(groups, usable)
     similarity_pairs = _top_similarity_pairs(usable, similarity)
     stance_counts = Counter(group.stance for group in groups)
 
@@ -73,6 +86,7 @@ def analyze_hearing(metadata: HearingMetadata, responses: list[HearingResponse],
         metadata=metadata,
         responses=responses,
         groups=groups,
+        political_directions=political_directions,
         similarity_pairs=similarity_pairs,
         stance_counts=dict(stance_counts),
         source_breakdown=dict(Counter(response.source_kind for response in responses)),
@@ -200,6 +214,66 @@ def _top_similarity_pairs(responses: list[HearingResponse], similarity: np.ndarr
                 }
             )
     return sorted(pairs, key=lambda item: item["score"], reverse=True)[:10]
+
+
+def _build_political_directions(groups: list[GroupSummary], responses: list[HearingResponse]) -> list[PoliticalDirection]:
+    directions: list[PoliticalDirection] = []
+    response_lookup = {response.actor: response for response in responses}
+
+    for direction_id, group in enumerate(groups, start=1):
+        member_text = " ".join(response_lookup[name].as_search_text() for name in group.actor_names if name in response_lookup)
+        themes = _infer_political_themes(member_text, group.top_terms)
+        title = _build_direction_title(themes, group.stance)
+        description = _build_direction_description(group, themes)
+        directions.append(
+            PoliticalDirection(
+                direction_id=direction_id,
+                title=title,
+                stance=group.stance,
+                member_count=group.member_count,
+                themes=themes,
+                supported_by=group.actor_names[:8],
+                description=description,
+                evidence_terms=group.top_terms[:6],
+            )
+        )
+
+    return directions
+
+
+def _infer_political_themes(text: str, top_terms: list[str]) -> list[str]:
+    lowered = f"{text.lower()} {' '.join(term.lower() for term in top_terms)}"
+    scores: list[tuple[int, str]] = []
+    for label, keywords in POLITICAL_SIGNAL_SETS.items():
+        score = sum(lowered.count(keyword.lower()) for keyword in keywords)
+        if score:
+            scores.append((score, label))
+
+    if not scores:
+        return [term.title() for term in top_terms[:2]] or ["Uspesifisert retning"]
+
+    ordered = [label for _, label in sorted(scores, key=lambda item: item[0], reverse=True)[:3]]
+    return ordered
+
+
+def _build_direction_title(themes: list[str], stance: str) -> str:
+    lead = " + ".join(theme.title() for theme in themes[:2]) if themes else "Uspesifisert retning"
+    stance_map = {
+        "støtter": "med støtte til hovedgrepet",
+        "kritiske": "med motstand mot hovedgrepet",
+        "betinget": "med betinget støtte",
+        "uklar": "med uklar støtte",
+    }
+    return f"{lead} {stance_map.get(stance, '')}".strip()
+
+
+def _build_direction_description(group: GroupSummary, themes: list[str]) -> str:
+    theme_text = ", ".join(themes[:3]) if themes else "flere ulike hensyn"
+    point = group.summary_points[0] if group.summary_points else "Gruppen peker i samme retning, men med ulike begrunnelser."
+    return (
+        f"Denne retningen samler {group.member_count} svar og vektlegger særlig {theme_text}. "
+        f"Typisk argumentasjon i gruppen: {point}"
+    )
 
 
 def _trim_sentence(text: str, max_length: int = 220) -> str:

@@ -125,7 +125,8 @@ button.secondary {
 }
 
 .stats-grid,
-.group-grid {
+.group-grid,
+.direction-grid {
   display: grid;
   gap: 16px;
 }
@@ -189,8 +190,20 @@ button.secondary {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
+.direction-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
 .group-card {
   padding: 22px;
+}
+
+.direction-card {
+  padding: 22px;
+  background: linear-gradient(180deg, rgba(236, 246, 244, 0.96), rgba(255, 253, 248, 0.96));
+  border: 1px solid rgba(14, 118, 110, 0.18);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
 }
 
 .group-topline {

@@ -4,7 +4,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from .models import AnalysisResult, GroupSummary, HearingMetadata, HearingResponse
+from .models import AnalysisResult, GroupSummary, HearingMetadata, HearingResponse, PoliticalDirection
 
 
 def save_analysis(cache_dir: Path, key: str, result: AnalysisResult) -> None:
@@ -21,10 +21,12 @@ def load_analysis(cache_dir: Path, key: str) -> AnalysisResult | None:
     metadata = HearingMetadata(**payload["metadata"])
     responses = [HearingResponse(**item) for item in payload["responses"]]
     groups = [GroupSummary(**item) for item in payload["groups"]]
+    political_directions = [PoliticalDirection(**item) for item in payload.get("political_directions", [])]
     return AnalysisResult(
         metadata=metadata,
         responses=responses,
         groups=groups,
+        political_directions=political_directions,
         similarity_pairs=payload["similarity_pairs"],
         stance_counts=payload["stance_counts"],
         source_breakdown=payload["source_breakdown"],

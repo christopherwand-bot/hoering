@@ -46,10 +46,23 @@ class GroupSummary:
 
 
 @dataclass
+class PoliticalDirection:
+    direction_id: int
+    title: str
+    stance: str
+    member_count: int
+    themes: list[str]
+    supported_by: list[str]
+    description: str
+    evidence_terms: list[str]
+
+
+@dataclass
 class AnalysisResult:
     metadata: HearingMetadata
     responses: list[HearingResponse]
     groups: list[GroupSummary]
+    political_directions: list[PoliticalDirection]
     similarity_pairs: list[dict[str, Any]]
     stance_counts: dict[str, int]
     source_breakdown: dict[str, int]

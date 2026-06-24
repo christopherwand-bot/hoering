@@ -62,6 +62,38 @@
   </article>
 </section>
 
+{% if result.political_directions %}
+<section class="panel">
+  <div class="panel-head">
+    <h2>Politiske retninger</h2>
+    <p>Denne seksjonen genereres på nytt for hver høring og forsøker å kode hvilke politiske linjer svarene støtter.</p>
+  </div>
+  <div class="direction-grid">
+    {% for direction in result.political_directions %}
+    <article class="direction-card">
+      <div class="group-topline">
+        <span>Retning {{ direction.direction_id }}</span>
+        <strong>{{ direction.member_count }} svar</strong>
+      </div>
+      <h3>{{ direction.title }}</h3>
+      <p class="muted">{{ direction.description }}</p>
+      <div class="term-list">
+        {% for theme in direction.themes %}
+        <span>{{ theme }}</span>
+        {% endfor %}
+      </div>
+      <p class="muted">Støttes særlig av: {{ direction.supported_by | join(", ") }}</p>
+      <div class="term-list">
+        {% for term in direction.evidence_terms %}
+        <span>{{ term }}</span>
+        {% endfor %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
 <section class="panel">
   <div class="panel-head">
     <h2>Oversikt</h2>
