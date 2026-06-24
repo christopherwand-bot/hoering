@@ -30,6 +30,39 @@ Appen er klargjort for Railway med `Procfile` og `railway.json`.
 3. Opprett et Railway-prosjekt fra repoet
 4. Railway vil installere `requirements.txt` og starte `gunicorn app:app`
 
+### Anbefalt deploy-oppsett
+
+- Bruk GitHub-autodeploy i Railway for vanlig publisering.
+- Slå på `Wait for CI` i Railway etter at repoet er koblet til. Repoet har en ferdig workflow i `.github/workflows/ci.yml`.
+- Hvis du heller vil trigge deploy manuelt fra GitHub Actions, bruk `.github/workflows/railway-deploy.yml` og legg inn `RAILWAY_TOKEN` som repository secret.
+
+### Eksakte Railway-kommandoer
+
+Installer CLI:
+
+```bash
+npm install -g @railway/cli
+```
+
+Logg inn:
+
+```bash
+railway login
+```
+
+Opprett prosjekt og første deploy fra lokal kode:
+
+```bash
+railway init
+railway up
+```
+
+Hvis du vil deploye mot et eksisterende prosjekt fra CI/CD, bruk et prosjekt-token:
+
+```bash
+RAILWAY_TOKEN=<token> railway up --ci
+```
+
 ## GitHub
 
 ```bash
@@ -38,6 +71,22 @@ git add .
 git commit -m "Initial commit: hearing dashboard"
 git branch -M main
 git remote add origin <din-github-url>
+git push -u origin main
+```
+
+### Neste GitHub-steg
+
+Når repoet finnes på GitHub, kobler du denne mappen til repoet slik:
+
+```bash
+git remote add origin https://github.com/<bruker>/<repo>.git
+git push -u origin main
+```
+
+Hvis `origin` allerede finnes:
+
+```bash
+git remote set-url origin https://github.com/<bruker>/<repo>.git
 git push -u origin main
 ```
 

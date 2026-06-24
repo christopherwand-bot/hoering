@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Smoke-check imports
+        run: python -m compileall app.py dashboard
+
+      - name: Verify Flask app boots
+        run: |
+          python - <<'PY'
+          from dashboard import create_app
+          app = create_app()
+          client = app.test_client()
+          response = client.get("/")
+          assert response.status_code == 200, response.status_code
+          print("Index OK")
+          PY
