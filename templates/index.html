@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Høringsanalyse</p>
+    <h1>Lim inn en høringslenke og få et dashbord over hvem som mener hva</h1>
+    <p class="lede">
+      Appen henter publiserte høringssvar, leser HTML- og PDF-vedlegg, grupperer svar etter språklig likhet
+      og viser hvilke aktører som ligner på hverandre.
+    </p>
+  </div>
+  <form method="post" class="search-card">
+    <label for="hearing_url">Lenke til høring</label>
+    <input id="hearing_url" name="hearing_url" type="url" value="{{ hearing_url }}" required>
+    <div class="actions">
+      <button type="submit">Analyser høring</button>
+      <button type="submit" name="force_refresh" value="1" class="secondary">Hent på nytt</button>
+    </div>
+  </form>
+</section>
+
+{% if not result %}
+<section class="panel">
+  <div class="panel-head">
+    <h2>Klar til analyse</h2>
+    <p>Standardlenken over er satt til cruiseavgift-høringen du sendte. Trykk på knappen for å bygge dashbordet.</p>
+  </div>
+</section>
+{% endif %}
+
+{% if result %}
+<section class="stats-grid">
+  <article class="stat-card">
+    <span>Høring</span>
+    <strong>{{ result.metadata.title }}</strong>
+    <small>{{ result.metadata.organization }}</small>
+  </article>
+  <article class="stat-card">
+    <span>Publiserte svar</span>
+    <strong>{{ total_responses }}</strong>
+    <small>{{ analyzed_responses }} analysert</small>
+  </article>
+  <article class="stat-card">
+    <span>Status</span>
+    <strong>{{ result.metadata.status or "Ukjent" }}</strong>
+    <small>Frist: {{ result.metadata.deadline or "Ukjent" }}</small>
+  </article>
+  <article class="stat-card">
+    <span>Kilder</span>
+    <strong>{{ result.source_breakdown.get('html', 0) }} HTML / {{ result.source_breakdown.get('pdf', 0) }} PDF</strong>
+    <small>Dato: {{ result.metadata.published_date or "Ukjent" }}</small>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Oversikt</h2>
+    <p>Likhetsgrupper og typiske standpunkter i høringssvarene.</p>
+  </div>
+  <div class="stance-list">
+    {% for stance, count in result.stance_counts.items() %}
+    <div class="stance-pill">
+      <span>{{ stance }}</span>
+      <strong>{{ count }}</strong>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Grupper</h2>
+    <p>Hver gruppe samler aktører som skriver temmelig likt om cruiseavgiften.</p>
+  </div>
+  <div class="group-grid">
+    {% for group in result.groups %}
+    <article class="group-card">
+      <div class="group-topline">
+        <span>Gruppe {{ group.group_id }}</span>
+        <strong>{{ group.member_count }} svar</strong>
+      </div>
+      <h3>{{ group.label }}</h3>
+      <p class="muted">Aktørtyper: {{ group.actor_types | join(", ") }}</p>
+      <div class="term-list">
+        {% for term in group.top_terms %}
+        <span>{{ term }}</span>
+        {% endfor %}
+      </div>
+      <ul class="summary-list">
+        {% for point in group.summary_points %}
+        <li>{{ point }}</li>
+        {% endfor %}
+      </ul>
+      <p class="muted">Aktører: {{ group.actor_names[:10] | join(", ") }}{% if group.actor_names|length > 10 %} …{% endif %}</p>
+      {% if group.similarity_examples %}
+      <div class="similarity-box">
+        <strong>Mest like i gruppen</strong>
+        {% for pair in group.similarity_examples %}
+        <p>{{ pair.left }} og {{ pair.right }}: {{ pair.score }} % likhet</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Mest like svar</h2>
+    <p>De nærmeste parene på tvers av alle svar.</p>
+  </div>
+  <div class="pair-list">
+    {% for pair in result.similarity_pairs %}
+    <div class="pair-row">
+      <span>{{ pair.left }}</span>
+      <span>{{ pair.right }}</span>
+      <strong>{{ pair.score }} %</strong>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Alle svar</h2>
+    <p>Klikk deg videre til originalkilden ved behov.</p>
+  </div>
+  <div class="response-table-wrap">
+    <table class="response-table">
+      <thead>
+        <tr>
+          <th>Aktør</th>
+          <th>Type</th>
+          <th>Kilde</th>
+          <th>Svartype</th>
+          <th>Dato</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for response in result.responses %}
+        <tr>
+          <td><a href="{{ response.source_url }}" target="_blank" rel="noreferrer">{{ response.actor }}</a></td>
+          <td>{{ response.actor_type }}</td>
+          <td>{{ response.source_kind|upper }}</td>
+          <td>{{ response.response_type or "Ikke oppgitt" }}</td>
+          <td>{{ response.response_date or "Ikke oppgitt" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{% if result.errors %}
+<section class="panel warning-panel">
+  <div class="panel-head">
+    <h2>Importmerknader</h2>
+    <p>Noen svar kunne ikke leses fullt ut. De er beholdt i oversikten, men kan mangle analysetekst.</p>
+  </div>
+  <ul class="summary-list">
+    {% for error in result.errors %}
+    <li>{{ error }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}

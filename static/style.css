@@ -1,0 +1,269 @@
+:root {
+  --bg: #f7f1e8;
+  --panel: #fffdf8;
+  --ink: #1d2b2a;
+  --muted: #5c6a67;
+  --line: #dccfbf;
+  --accent: #0e766e;
+  --accent-soft: #daf4f1;
+  --warn: #8b3a2a;
+  --shadow: 0 18px 48px rgba(29, 43, 42, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Iowan Old Style", "Palatino Linotype", serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(14, 118, 110, 0.12), transparent 28%),
+    linear-gradient(180deg, #fff7ec 0%, var(--bg) 55%, #efe4d4 100%);
+}
+
+.page-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px 72px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 28px;
+}
+
+.eyebrow,
+.stat-card span,
+.group-topline span,
+.panel-head p,
+.muted,
+th {
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: 1.05;
+}
+
+h1 {
+  font-size: clamp(2.3rem, 4vw, 4.4rem);
+  max-width: 14ch;
+}
+
+.lede {
+  max-width: 62ch;
+  font-size: 1.08rem;
+  color: var(--muted);
+}
+
+.search-card,
+.panel,
+.stat-card,
+.group-card {
+  background: rgba(255, 253, 248, 0.86);
+  border: 1px solid rgba(220, 207, 191, 0.9);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.search-card,
+.panel {
+  padding: 24px;
+}
+
+.search-card label {
+  display: block;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 0.92rem;
+  margin-bottom: 8px;
+}
+
+input[type="url"] {
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  font-size: 1rem;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+button {
+  border: 0;
+  padding: 14px 18px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button.secondary {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.stats-grid,
+.group-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.stats-grid {
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  padding: 22px;
+}
+
+.stat-card strong {
+  display: block;
+  font-size: 1.3rem;
+  margin: 10px 0 6px;
+}
+
+.panel {
+  margin-bottom: 24px;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.panel-head p,
+.muted,
+.stat-card small {
+  color: var(--muted);
+}
+
+.stance-list,
+.term-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.stance-pill,
+.term-list span {
+  border-radius: 999px;
+  padding: 10px 14px;
+}
+
+.stance-pill {
+  background: #ebf6f4;
+}
+
+.term-list span {
+  background: #f4ece0;
+  color: #664f1f;
+}
+
+.group-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.group-card {
+  padding: 22px;
+}
+
+.group-topline {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.summary-list {
+  padding-left: 18px;
+}
+
+.summary-list li {
+  margin-bottom: 10px;
+}
+
+.similarity-box {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f5faf9;
+}
+
+.pair-list {
+  display: grid;
+  gap: 12px;
+}
+
+.pair-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.response-table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 14px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+a {
+  color: var(--accent);
+}
+
+.warning-panel {
+  border-color: rgba(139, 58, 42, 0.3);
+}
+
+@media (max-width: 920px) {
+  .hero,
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-head,
+  .pair-row {
+    grid-template-columns: 1fr;
+    display: block;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+}
