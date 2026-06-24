@@ -3,16 +3,26 @@
 {% block content %}
 <section class="hero">
   <div>
-    <p class="eyebrow">Høringsanalyse</p>
-    <h1>Lim inn en høringslenke og få et dashbord over hvem som mener hva</h1>
+    <p class="eyebrow">Lobbyistens Oversikt</p>
+    <h1>Se hvem som støtter deg, hvem som er imot deg, og hva kunden bør gjøre nå</h1>
     <p class="lede">
-      Appen henter publiserte høringssvar, leser HTML- og PDF-vedlegg, grupperer svar etter språklig likhet
-      og viser hvilke aktører som ligner på hverandre.
+      Verktøyet oversetter høringssvar til politiske posisjoner, aktørstyrke, argumentkart og konkrete råd til kunden.
     </p>
   </div>
   <form method="post" class="search-card">
     <label for="hearing_url">Lenke til høring</label>
     <input id="hearing_url" name="hearing_url" type="url" value="{{ hearing_url }}" required>
+    <label for="customer_type">Hvem er kunden?</label>
+    <input id="customer_type" name="customer_type" list="customer_types" value="{{ customer_type }}" placeholder="f.eks. cruiseaktør" required>
+    <datalist id="customer_types">
+      <option value="cruiseaktør">
+      <option value="kommune">
+      <option value="hotell/reiseliv">
+      <option value="miljøorganisasjon">
+      <option value="departement">
+      <option value="havn">
+      <option value="bransjeorganisasjon">
+    </datalist>
     <div class="actions">
       <button type="submit">Analyser høring</button>
       <button type="submit" name="force_refresh" value="1" class="secondary">Hent på nytt</button>
@@ -23,8 +33,8 @@
 {% if not result %}
 <section class="panel">
   <div class="panel-head">
-    <h2>Klar til analyse</h2>
-    <p>Standardlenken over er satt til cruiseavgift-høringen du sendte. Trykk på knappen for å bygge dashbordet.</p>
+    <h2>Klar for kundebriefer</h2>
+    <p>Velg høringslenke og kundeprofil for å generere en rådgivningsklar oversikt.</p>
   </div>
 </section>
 {% endif %}
@@ -46,102 +56,200 @@
     <small>{{ result.metadata.organization }}</small>
   </article>
   <article class="stat-card">
-    <span>Publiserte svar</span>
-    <strong>{{ total_responses }}</strong>
-    <small>{{ analyzed_responses }} analysert</small>
+    <span>Aktører analysert</span>
+    <strong>{{ analyzed_responses }}</strong>
+    <small>{{ total_responses }} publiserte svar</small>
   </article>
   <article class="stat-card">
-    <span>Status</span>
-    <strong>{{ result.metadata.status or "Ukjent" }}</strong>
-    <small>Frist: {{ result.metadata.deadline or "Ukjent" }}</small>
+    <span>Kundeprofil</span>
+    <strong>{{ customer_type }}</strong>
+    <small>Kundetilpasset vurdering</small>
   </article>
   <article class="stat-card">
-    <span>Kilder</span>
-    <strong>{{ result.source_breakdown.get('html', 0) }} HTML / {{ result.source_breakdown.get('pdf', 0) }} PDF</strong>
-    <small>Dato: {{ result.metadata.published_date or "Ukjent" }}</small>
+    <span>Samlet politisk tyngde</span>
+    <strong>{{ result.actor_assessments | sum(attribute='political_weight') }}</strong>
+    <small>{{ result.position_matrix[0].label if result.position_matrix else "Ukjent" }}</small>
   </article>
 </section>
 
-{% if result.political_directions %}
-<section class="panel">
+<section class="panel overview-panel">
   <div class="panel-head">
-    <h2>Politiske retninger</h2>
-    <p>Denne seksjonen genereres på nytt for hver høring og forsøker å kode hvilke politiske linjer svarene støtter.</p>
+    <h2>Lobbyistens oversikt</h2>
+    <p>Første skjerm for kunden: hovedbildet, aktørene og hva dere bør gjøre nå.</p>
   </div>
-  <div class="direction-grid">
-    {% for direction in result.political_directions %}
-    <article class="direction-card">
-      <div class="group-topline">
-        <span>Retning {{ direction.direction_id }}</span>
-        <strong>{{ direction.member_count }} svar</strong>
-      </div>
-      <h3>{{ direction.title }}</h3>
-      <p class="muted">{{ direction.description }}</p>
-      <div class="term-list">
-        {% for theme in direction.themes %}
-        <span>{{ theme }}</span>
-        {% endfor %}
-      </div>
-      <p class="muted">Støttes særlig av: {{ direction.supported_by | join(", ") }}</p>
-      <div class="term-list">
-        {% for term in direction.evidence_terms %}
-        <span>{{ term }}</span>
-        {% endfor %}
-      </div>
-    </article>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
-
-<section class="panel">
-  <div class="panel-head">
-    <h2>Oversikt</h2>
-    <p>Likhetsgrupper og typiske standpunkter i høringssvarene.</p>
-  </div>
-  <div class="stance-list">
-    {% for stance, count in result.stance_counts.items() %}
-    <div class="stance-pill">
-      <span>{{ stance }}</span>
-      <strong>{{ count }}</strong>
-    </div>
-    {% endfor %}
-  </div>
-</section>
-
-<section class="panel">
-  <div class="panel-head">
-    <h2>Grupper</h2>
-    <p>Hver gruppe samler aktører som skriver temmelig likt om cruiseavgiften.</p>
-  </div>
-  <div class="group-grid">
-    {% for group in result.groups %}
-    <article class="group-card">
-      <div class="group-topline">
-        <span>Gruppe {{ group.group_id }}</span>
-        <strong>{{ group.member_count }} svar</strong>
-      </div>
-      <h3>{{ group.label }}</h3>
-      <p class="muted">Aktørtyper: {{ group.actor_types | join(", ") }}</p>
-      <div class="term-list">
-        {% for term in group.top_terms %}
-        <span>{{ term }}</span>
-        {% endfor %}
-      </div>
+  <div class="overview-grid">
+    <article class="overview-card">
+      <h3>Kort oppsummering</h3>
       <ul class="summary-list">
-        {% for point in group.summary_points %}
+        {% for point in result.summary_points %}
         <li>{{ point }}</li>
         {% endfor %}
       </ul>
-      <p class="muted">Aktører: {{ group.actor_names[:10] | join(", ") }}{% if group.actor_names|length > 10 %} …{% endif %}</p>
-      {% if group.similarity_examples %}
-      <div class="similarity-box">
-        <strong>Mest like i gruppen</strong>
-        {% for pair in group.similarity_examples %}
-        <p>{{ pair.left }} og {{ pair.right }}: {{ pair.score }} % likhet</p>
+    </article>
+    <article class="overview-card emphasis-card">
+      <h3>Dette handler saken egentlig om</h3>
+      <p>{{ result.political_main_picture }}</p>
+    </article>
+    <article class="overview-card">
+      <h3>Anbefalt oppfølging</h3>
+      <ul class="summary-list">
+        {% for point in result.recommended_follow_up %}
+        <li>{{ point }}</li>
         {% endfor %}
-      </div>
-      {% endif %}
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Executive summary</h2>
+    <p>Skrevet for kunde, ikke analytiker.</p>
+  </div>
+  <div class="executive-summary-box" id="executive-summary">{{ result.executive_summary }}</div>
+  <div class="actions export-actions">
+    <a class="button-link" href="{{ url_for('dashboard.export_brief', hearing_url=hearing_url, customer_type=customer_type) }}" target="_blank" rel="noreferrer">Eksporter kundebrief som PDF</a>
+    <a class="button-link secondary-link" href="{{ url_for('dashboard.export_actors_csv', hearing_url=hearing_url, customer_type=customer_type) }}">Eksporter aktørtabell som Excel/CSV</a>
+    <button type="button" class="secondary" onclick="navigator.clipboard.writeText(document.getElementById('executive-summary').innerText)">Kopier executive summary</button>
+    <a class="button-link secondary-link" href="{{ mailto_link }}">Lag e-postutkast til kunde</a>
+    <a class="button-link secondary-link" href="{{ url_for('dashboard.export_meeting_note', hearing_url=hearing_url, customer_type=customer_type) }}">Lag notat til møte med kunde</a>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Aktørkart</h2>
+    <p>Aktører å følge med på, rangert etter politisk tyngde og relevans for kunden.</p>
+  </div>
+  <div class="actor-chip-grid">
+    {% for actor in result.actor_assessments[:12] %}
+    <article class="actor-chip {{ actor.relevance_for_client }}">
+      <strong>{{ actor.actor }}</strong>
+      <span>{{ actor.primary_position }}</span>
+      <small>{{ actor.power_label }} tyngde · {{ actor.relationship_to_client }}</small>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="two-column-grid">
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Standpunktmatrise</h2>
+      <p>Ikke bare antall svar, men samlet politisk tyngde.</p>
+    </div>
+    <div class="matrix-list">
+      {% for block in result.position_matrix %}
+      <article class="matrix-card">
+        <div class="group-topline">
+          <span>{{ block.label }}</span>
+          <strong>{{ block.actor_count }} aktører</strong>
+        </div>
+        <p>Samlet politisk tyngde: <strong>{{ block.political_weight }}</strong></p>
+        <p class="muted">Viktigste aktører: {{ block.key_actors | join(", ") }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Argumentkart</h2>
+      <p>Dette mener aktørene, samlet på tvers av svar.</p>
+    </div>
+    <ul class="summary-list">
+      {% for line in result.argument_map %}
+      <li>{{ line }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+</section>
+
+<section class="two-column-grid">
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Mulige allierte</h2>
+      <p>Aktører som kan være nyttige for kunden å snakke med.</p>
+    </div>
+    <ul class="summary-list">
+      {% for actor in result.customer_advice.likely_allies %}
+      <li>{{ actor }}</li>
+      {% else %}
+      <li>Ingen tydelige allierte identifisert ennå.</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Mulige motstandere</h2>
+      <p>Aktører og innvendinger kunden bør forberede svar på.</p>
+    </div>
+    <ul class="summary-list">
+      {% for actor in result.customer_advice.likely_opponents %}
+      <li>{{ actor }}</li>
+      {% else %}
+      <li>Ingen tydelig samlet motblokk identifisert ennå.</li>
+      {% endfor %}
+    </ul>
+  </section>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Kundens handlingsrom</h2>
+    <p>Hvem kunden bør kontakte, hvilke argumenter som bør brukes, og hva som må møtes.</p>
+  </div>
+  <div class="customer-grid">
+    <article class="overview-card">
+      <h3>Viktigst for kunden</h3>
+      <ul class="summary-list">
+        {% for actor in result.customer_advice.top_priority_actors %}
+        <li>{{ actor }}</li>
+        {% endfor %}
+      </ul>
+    </article>
+    <article class="overview-card">
+      <h3>Hvem kunden bør kontakte</h3>
+      <ul class="summary-list">
+        {% for actor in result.customer_advice.actors_to_contact %}
+        <li>{{ actor }}</li>
+        {% endfor %}
+      </ul>
+    </article>
+    <article class="overview-card">
+      <h3>Argumenter kunden kan bruke</h3>
+      <ul class="summary-list">
+        {% for argument in result.customer_advice.suggested_arguments %}
+        <li>{{ argument }}</li>
+        {% endfor %}
+      </ul>
+    </article>
+    <article class="overview-card">
+      <h3>Innvendinger kunden må svare ut</h3>
+      <ul class="summary-list">
+        {% for objection in result.customer_advice.objections_to_prepare %}
+        <li>{{ objection }}</li>
+        {% endfor %}
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Hvem mener hva</h2>
+    <p>Temakort med støtte, konflikt, risiko og mulig budskap.</p>
+  </div>
+  <div class="theme-grid">
+    {% for card in result.theme_cards %}
+    <article class="theme-card">
+      <h3>{{ card.theme }}</h3>
+      <p><strong>Støtter:</strong> {{ card.supports | join(", ") if card.supports else "Ingen tydelig blokk" }}</p>
+      <p><strong>Uenig/forbehold:</strong> {{ card.disagrees | join(", ") if card.disagrees else "Ingen tydelig motblokk" }}</p>
+      <p><strong>Argument:</strong> {{ card.typical_arguments | join(" ") }}</p>
+      <p><strong>Politisk risiko:</strong> {{ card.political_risk }}</p>
+      <p><strong>Mulig budskap for kunden:</strong> {{ card.client_message }}</p>
     </article>
     {% endfor %}
   </div>
@@ -149,44 +257,36 @@
 
 <section class="panel">
   <div class="panel-head">
-    <h2>Mest like svar</h2>
-    <p>De nærmeste parene på tvers av alle svar.</p>
-  </div>
-  <div class="pair-list">
-    {% for pair in result.similarity_pairs %}
-    <div class="pair-row">
-      <span>{{ pair.left }}</span>
-      <span>{{ pair.right }}</span>
-      <strong>{{ pair.score }} %</strong>
-    </div>
-    {% endfor %}
-  </div>
-</section>
-
-<section class="panel">
-  <div class="panel-head">
-    <h2>Alle svar</h2>
-    <p>Klikk deg videre til originalkilden ved behov.</p>
+    <h2>Aktørtabell</h2>
+    <p>Beslutningsorientert oversikt over hvem som mener hva.</p>
   </div>
   <div class="response-table-wrap">
     <table class="response-table">
       <thead>
         <tr>
           <th>Aktør</th>
-          <th>Type</th>
-          <th>Kilde</th>
-          <th>Svartype</th>
-          <th>Dato</th>
+          <th>Aktørtype</th>
+          <th>Standpunkt</th>
+          <th>Viktigste argument</th>
+          <th>Hva de ber om konkret</th>
+          <th>Relevans</th>
+          <th>Alliert/motstander</th>
+          <th>Kort sitat</th>
+          <th>Lenke</th>
         </tr>
       </thead>
       <tbody>
-        {% for response in result.responses %}
+        {% for actor in result.actor_assessments %}
         <tr>
-          <td><a href="{{ response.source_url }}" target="_blank" rel="noreferrer">{{ response.actor }}</a></td>
-          <td>{{ response.actor_type }}</td>
-          <td>{{ response.source_kind|upper }}</td>
-          <td>{{ response.response_type or "Ikke oppgitt" }}</td>
-          <td>{{ response.response_date or "Ikke oppgitt" }}</td>
+          <td>{{ actor.actor }}</td>
+          <td>{{ actor.normalized_actor_type }}</td>
+          <td>{{ actor.primary_position }}</td>
+          <td>{{ actor.main_argument }}</td>
+          <td>{{ actor.concrete_request }}</td>
+          <td>{{ actor.relevance_for_client }}</td>
+          <td>{{ actor.relationship_to_client }}</td>
+          <td>{{ actor.short_quote }}</td>
+          <td><a href="{{ actor.source_url }}" target="_blank" rel="noreferrer">Original</a></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -198,7 +298,7 @@
 <section class="panel warning-panel">
   <div class="panel-head">
     <h2>Importmerknader</h2>
-    <p>Noen svar kunne ikke leses fullt ut. De er beholdt i oversikten, men kan mangle analysetekst.</p>
+    <p>Noen svar kunne ikke leses fullt ut. De holdes utenfor hovedanalysen til de blir tilgjengelige.</p>
   </div>
   <ul class="summary-list">
     {% for error in result.errors %}

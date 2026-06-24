@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="no">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kundebrief</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body class="brief-page">
+    <main class="page-shell brief-shell">
+      <section class="panel">
+        <div class="panel-head">
+          <h1>Kundebrief</h1>
+          <p>{{ result.metadata.title }} · {{ customer_type }}</p>
+        </div>
+        <p class="print-hint">Bruk nettleserens “Print / Save as PDF” for å lagre denne som PDF.</p>
+        <div class="executive-summary-box">{{ result.executive_summary }}</div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Kort oppsummering</h2>
+          <p>Rask rådgiveroversikt.</p>
+        </div>
+        <ul class="summary-list">
+          {% for point in result.summary_points %}
+          <li>{{ point }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Anbefalt oppfølging</h2>
+          <p>Dette bør kunden gjøre nå.</p>
+        </div>
+        <ul class="summary-list">
+          {% for point in result.recommended_follow_up %}
+          <li>{{ point }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
