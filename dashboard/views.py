@@ -16,6 +16,7 @@ def index():
     force_refresh = request.form.get("force_refresh") == "1"
     should_analyze = request.method == "POST" or bool(request.args.get("hearing_url"))
     result = None
+    fatal_error = None
 
     if should_analyze:
         cache_dir = current_app.config["CACHE_DIR"]
@@ -24,14 +25,18 @@ def index():
 
         result = None if force_refresh else load_analysis(cache_dir, cache_key)
         if result is None:
-            metadata, responses, errors = scraper.scrape(hearing_url)
-            result = analyze_hearing(metadata, responses, errors)
-            save_analysis(cache_dir, cache_key, result)
+            try:
+                metadata, responses, errors = scraper.scrape(hearing_url)
+                result = analyze_hearing(metadata, responses, errors)
+                save_analysis(cache_dir, cache_key, result)
+            except Exception as exc:
+                fatal_error = f"Analysen kunne ikke fullføres akkurat nå: {exc}"
 
     return render_template(
         "index.html",
         hearing_url=hearing_url,
         result=result,
+        fatal_error=fatal_error,
         total_responses=len(result.responses) if result else 0,
         analyzed_responses=sum(1 for response in result.responses if response.text) if result else 0,
     )

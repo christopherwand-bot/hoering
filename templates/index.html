@@ -29,6 +29,15 @@
 </section>
 {% endif %}
 
+{% if fatal_error %}
+<section class="panel warning-panel">
+  <div class="panel-head">
+    <h2>Analysefeil</h2>
+    <p>{{ fatal_error }}</p>
+  </div>
+</section>
+{% endif %}
+
 {% if result %}
 <section class="stats-grid">
   <article class="stat-card">

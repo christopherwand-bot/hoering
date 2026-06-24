@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import shutil
 import subprocess
 import tempfile
 import time
@@ -54,6 +55,9 @@ class HearingScraper:
         return response
 
     def _get_html(self, url: str, referer: str | None = None, browser_like: bool = True) -> str:
+        if shutil.which("curl") is None:
+            return self._get(url, referer=referer).text
+
         for attempt in range(2):
             command = [
                 "curl",
@@ -72,12 +76,15 @@ class HearingScraper:
                 command[6:6] = ["-A", BASE_HEADERS["User-Agent"]]
             if referer:
                 command.extend(["-e", referer])
-            result = subprocess.run(command, check=True, capture_output=True, text=True)
+            try:
+                result = subprocess.run(command, check=True, capture_output=True, text=True)
+            except (subprocess.SubprocessError, FileNotFoundError):
+                return self._get(url, referer=referer).text
             if not self._is_unavailable_html(result.stdout):
                 time.sleep(0.1)
                 return result.stdout
             time.sleep(0.4 + (attempt * 0.6))
-        return result.stdout
+        return self._get(url, referer=referer).text
 
     def _parse_metadata(self, soup: BeautifulSoup, hearing_url: str) -> HearingMetadata:
         title = self._text(soup.select_one("h1")) or "Ukjent høring"
