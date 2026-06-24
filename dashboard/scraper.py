@@ -124,8 +124,11 @@ class HearingScraper:
             response.title = response.actor
             return
 
-        response_page = self._compose_response_url(hearing_url, response.source_url)
-        document = self._get_html(response_page, referer=hearing_url)
+        # Use the published uid URL exactly as listed on the hearing page.
+        # Rewriting the query string or attaching a referer has proven less stable
+        # than opening the direct response URL as a normal browser would.
+        response_page = response.source_url
+        document = self._get_html(response_page, referer=None)
         if self._is_unavailable_html(document):
             raise RuntimeError("Enkeltsvaret var midlertidig utilgjengelig fra regjeringen.no")
         soup = BeautifulSoup(document, "html.parser")
@@ -134,15 +137,6 @@ class HearingScraper:
         response.response_date = meta.get("Dato")
         response.response_type = meta.get("Svartype")
         response.text = self._extract_article_text(soup)
-
-    def _compose_response_url(self, hearing_url: str, response_url: str) -> str:
-        hearing_parts = urlparse(hearing_url)
-        query = parse_qs(urlparse(response_url).query)
-        uid = query.get("uid", [""])[0]
-        if not uid:
-            return response_url
-        clean_base = f"{hearing_parts.scheme}://{hearing_parts.netloc}{hearing_parts.path}"
-        return f"{clean_base}?showSvar=true&uid={uid}"
 
     def _extract_article_text(self, soup: BeautifulSoup) -> str:
         body = soup.select_one(".article-body")
